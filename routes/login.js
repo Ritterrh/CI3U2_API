@@ -4,6 +4,8 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { createToken, createRefreshToken} = require('../middleware/verfiytoken');
+const my = require("mysql");
+require('dotenv').config();
 /*
         ---------------------
         Login
@@ -11,13 +13,15 @@ const { createToken, createRefreshToken} = require('../middleware/verfiytoken');
  */
 
 
-const db = mysql2.createConnection({
-    host: 'data.filmprojekt1.de',
-    port: 3306,
-    user: 'Rodi',
-    password: '1408',
-    database: 'EmscherProjekt'
-})
+
+const db = my.createConnection(
+    {
+        host:process.env.DATENBANK_HOST,
+        database: process.env.DATENBANK1,
+        user: process.env.DATENBANK_USER,
+        password: process.env.DATENBANK_PASS,
+    }
+);
 
 
 // API-Route zum Abrufen von Audio-Dateien im Radius
