@@ -7,6 +7,7 @@ const path = require('path');
 const multer = require('multer');
 const my = require('mysql');
 const {RowDataPacket} = require("mysql/lib/protocol/packets");
+const {response, json} = require("express");
 require('dotenv').config();
 
 const host = process.env.DATENBANK_HOST;
@@ -15,7 +16,14 @@ const user = process.env.DATENBANK_USER;
 const pw = process.env.DATENBANK_PASS;
 
 
-
+const db1 = my.createConnection(
+    {
+        host:process.env.DATENBANK_HOST,
+        database: process.env.DATENBANK1,
+        user: process.env.DATENBANK_USER,
+        password: process.env.DATENBANK_PASS,
+    }
+);
 
 const con = my.createConnection(
     {
@@ -45,7 +53,44 @@ const uploadNewsImage = multer({
         checkFileType(file, cb);
     },
 }).single('image');
+router.get('/audio', (req, res) => {
+    const userLatitude = parseFloat(req.query.userLatitude);
+    const userLongitude = parseFloat(req.query.userLongitude);
+    const title =req.query.titel;
+    const description =req.query.beschreibung;
+    const creator =req.query.ersteller;
+    const radius = 5; // Radius in Kilometern
+    console.log(userLongitude, userLatitude)
+    db1.query('SELECT * FROM audio_files', (err, rows) => {
+        if (err) {
+            console.error(err.message);
+            res.status(500).json({ error: "Serverfehler" });
+            console.log(response);
+            return;
+        }
 
+        const audioFilesInRadius = rows.filter(row => {
+            const distance = calculateDistance(userLatitude, userLongitude, row.latitude, row.longitude);
+            return distance <= radius;
+        });
+        res.json({audioFiles: audioFilesInRadius});
+        console.log(audioFilesInRadius);
+    });
+});
+
+
+// Funktion zur Berechnung der Entfernung (wie zuvor definiert)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Erdradius in Kilometern
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance;
+}
 /*
         ---------------------
         News
